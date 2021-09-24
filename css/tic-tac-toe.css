@@ -1,0 +1,106 @@
+* {
+    font-size: 10px;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: black;
+}
+
+button {
+    height: 50px;
+    width: 100px;
+    border-radius: 10px;
+    margin: 15px;
+    font-size: 1.5em;
+
+    background-image: linear-gradient(#CF6060, #549BCD);
+    color: black;
+}
+
+#game-board {
+    height: 350px;
+    width: 100vw;
+    margin: 25px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#game-result {
+    text-align: center;
+    font-size: 2em;
+}
+
+#player-win-count {
+    width: 150px;
+    text-align: center;
+    color: #549BCD;
+}
+
+#draw-count {
+    width: 150px;
+    text-align: center;
+    background: linear-gradient(#CF6060, #549BCD);
+    background-clip: text;
+    color: transparent;
+}
+
+#computer-win-count {
+    width: 150px;
+    text-align: center;
+    color: #CF6060;
+}
+
+.container {
+    height: 25px;
+    width: 500px;
+    margin: 25px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-evenly;
+}
+
+.count {
+    font-size: 2em;
+    color: white;
+}
+
+.row {
+    height: 100px;
+    width: 300px;
+
+    display: flex;
+    flex-direction: row;
+}
+
+.cell {
+    height: 100%;
+    width: 100%;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.cell p {
+    font-size: 5em;
+}
+
+.cell:hover {
+    box-shadow: inset 0px 0px 3px 3px #549BCD;
+}
+
+.computer-win {
+    box-shadow: inset 0px 0px 3px 3px #CF6060;
+}
+
+.player-win {
+    box-shadow: inset 0px 0px 3px 3px #549BCD;
+}
