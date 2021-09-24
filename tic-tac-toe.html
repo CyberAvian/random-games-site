@@ -3,9 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="js/tic-tac-toe.js" defer></script>
+    <link rel="stylesheet" href="css/tic-tac-toe.css">
     <title>Tic-Tac-Toe</title>
 </head>
 <body>
-    <div id="game-board"></div>
+    <div id="game-board">
+        <div id="result-holder">
+            <p id="game-result"></p>
+        </div>
+    </div>
+    <div id="new-game-group">
+        <label for="new-game"></label>
+        <button type="button" value="New Game" id="new-game">New Game</button>
+    </div>
 </body>
 </html>
