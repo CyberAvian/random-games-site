@@ -7,6 +7,7 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    background: black;
 }
 
 button {
@@ -16,9 +17,8 @@ button {
     margin: 15px;
     font-size: 1.5em;
 
-    background-image: linear-gradient(red, blue);
-    background-clip: text;
-    color: transparent;
+    background-image: linear-gradient(#CF6060, #549BCD);
+    color: black;
 }
 
 #game-board {
@@ -35,18 +35,41 @@ button {
 #game-result {
     text-align: center;
     font-size: 2em;
-    background: linear-gradient(red, blue);
+}
+
+#player-win-count {
+    width: 150px;
+    text-align: center;
+    color: #549BCD;
+}
+
+#draw-count {
+    width: 150px;
+    text-align: center;
+    background: linear-gradient(#CF6060, #549BCD);
     background-clip: text;
     color: transparent;
 }
 
-#result-holder {
+#computer-win-count {
+    width: 150px;
+    text-align: center;
+    color: #CF6060;
+}
+
+.container {
     height: 25px;
-    width: 100px;
+    width: 500px;
     margin: 25px;
     display: flex;
+    flex-direction: row;
     align-items: center;
-    justify-content: center;
+    justify-content: space-evenly;
+}
+
+.count {
+    font-size: 2em;
+    color: white;
 }
 
 .row {
@@ -71,5 +94,13 @@ button {
 }
 
 .cell:hover {
-    box-shadow: inset 0px 0px 3px 3px blue;
+    box-shadow: inset 0px 0px 3px 3px #549BCD;
+}
+
+.computer-win {
+    box-shadow: inset 0px 0px 3px 3px #CF6060;
+}
+
+.player-win {
+    box-shadow: inset 0px 0px 3px 3px #549BCD;
 }
