@@ -2,9 +2,6 @@ let gameOver = false;
 let playerWins = 0;
 let computerWins = 0;
 let draws = 0;
-let cells = new Array(3).fill("").map(() => new Array(3).fill(""));
-let gameBoard = document.querySelector("#game-board");
-let gameBoardText = gameBoard.querySelector("p");
 let playerWinCount = document.querySelector("#player-win-count");
 let drawCount = document.querySelector("#draw-count");
 let computerWinCount = document.querySelector('#computer-win-count');
@@ -13,39 +10,63 @@ createGameBoard();
 let newGame = document.querySelector("#new-game");
 newGame.addEventListener('click', clearGameBoard);
 
-function createGameBoard() {
-    for (let rowNum = 0; rowNum < 3; rowNum++) {
-        let rowElement = document.createElement("div");
-        rowElement.id = `row${rowNum}`;
-        rowElement.classList = "row";
-    
-        for (let columnNum = 0; columnNum < 3; columnNum++) {
-            let columnElement = document.createElement("div");
-            columnElement.id = `cell${rowNum}${columnNum}`
-            columnElement.classList = "cell";
-    
-            if (rowNum !== 2) {
-                columnElement.style.borderBottom = "solid 1px white";
-            }
-            if (columnNum !== 2) {
-                columnElement.style.borderRight = "solid 1px white";
-            } 
+class Player {
+    constructor(number, symbol, type) {
+        this.number = number;
+        this.symbol = symbol;
+        this.type = type;
+    }
+}
 
-            columnElement.addEventListener('click', playRound);
-            
-            let contentElement = document.createElement("p");
-            columnElement.appendChild(contentElement);
-            rowElement.appendChild(columnElement);
-
-            cells[rowNum][columnNum] = columnElement;
-        }
-    
-        gameBoard.appendChild(rowElement);
+class GameBoard {
+    constructor(rows, columns) {
+        this.rows = rows;
+        this.columns = columns;
+        this.cells = new Array(rows).fill("").map(() => new Array(columns).fill(""));
+        this.board = document.querySelector("#game-board");
+        this.boardText = this.board.querySelector("p");
     }
 
-    playerWinCount.textContent = `Player: ${playerWins}`;
-    drawCount.textContent = `Draw: ${draws}`;
-    computerWinCount.textContent = `Computer: ${computerWins}`;
+    create() {
+        this.createRows();
+        playerWinCount.textContent = `Player: ${playerWins}`;
+        drawCount.textContent = `Draw: ${draws}`;
+        computerWinCount.textContent = `Computer: ${computerWins}`;
+    }
+
+    createRows() {
+        for (let rowNum = 0; rowNum < this.rows; rowNum++) {
+            let row = document.createElement("div");
+            row.id = `row${rowCounter}`;
+            row.classList = "row";
+            this.createCells(row);
+            this.board.appendChild(row);
+        }
+    }
+
+    createCells(row) {
+        for (let columnNum = 0; columnNum < this.columns; columnNum++) {
+            let cell = document.createElement("div");
+            cell.id = `cell${rowNum}${columnNum}`
+            cell.classList = "cell";
+            cell.addEventListener('click', playRound);
+            let cellContent = document.createElement("p");
+            columnElement.appendChild(cellContent);
+            
+            if (rowCounter !== this.rows - 1) {
+                cell.style.borderBottom = "solid 1px white";
+            }
+            if (columnCounter !== this.columns - 1) {
+                cell.style.borderRight = "solid 1px white";
+            } 
+            
+            this.cells[rowCounter][columnNum] = cell;
+        }
+    }
+}
+
+class Controller {
+
 }
 
 function clearGameBoard() {
