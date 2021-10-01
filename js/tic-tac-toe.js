@@ -2,10 +2,7 @@ let gameOver = false;
 let playerWins = 0;
 let computerWins = 0;
 let draws = 0;
-let playerWinCount = document.querySelector("#player-win-count");
-let drawCount = document.querySelector("#draw-count");
-let computerWinCount = document.querySelector('#computer-win-count');
-createGameBoard();
+
 
 let newGame = document.querySelector("#new-game");
 newGame.addEventListener('click', clearGameBoard);
@@ -19,64 +16,100 @@ class Player {
 }
 
 class GameBoard {
-    constructor(rows, columns) {
-        this.rows = rows;
-        this.columns = columns;
-        this.cells = new Array(rows).fill("").map(() => new Array(columns).fill(""));
+    constructor() {
+        this.gameBoardRows = 3;
+        this.gameBoardColumns = 3;
+        this.cells = new Array(this.gameBoardRows * this.columns);
         this.board = document.querySelector("#game-board");
-        this.boardText = this.board.querySelector("p");
+        this.text = this.board.querySelector("#game-result");
     }
 
+    // Create the board, which is only done the first time the game is launched
     create() {
-        this.createRows();
-        playerWinCount.textContent = `Player: ${playerWins}`;
-        drawCount.textContent = `Draw: ${draws}`;
-        computerWinCount.textContent = `Computer: ${computerWins}`;
+        createdCells = this.createCells();
+        this.board.append(createdCells);
     }
 
-    createRows() {
-        for (let rowNum = 0; rowNum < this.rows; rowNum++) {
-            let row = document.createElement("div");
-            row.id = `row${rowCounter}`;
-            row.classList = "row";
-            this.createCells(row);
-            this.board.appendChild(row);
-        }
-    }
-
+    // Create the cells used in the board, which is only done the first time the game is launched
     createCells(row) {
-        for (let columnNum = 0; columnNum < this.columns; columnNum++) {
-            let cell = document.createElement("div");
-            cell.id = `cell${rowNum}${columnNum}`
-            cell.classList = "cell";
-            cell.addEventListener('click', playRound);
-            let cellContent = document.createElement("p");
-            columnElement.appendChild(cellContent);
-            
-            if (rowCounter !== this.rows - 1) {
-                cell.style.borderBottom = "solid 1px white";
+        // Creating the cell element once and cloning in a loop to limit DOM manipulations
+        let cell = document.createElement("div");
+        cell.classList = "cell";
+        cell.addEventListener('click', playRound);
+
+        let cellContent = document.createElement("p");
+        columnElement.appendChild(cellContent);
+
+        // Document Fragments are stored in memory rather than the live DOM,
+        // allowing us to build the child element before appending it once
+        let documentFragment = document.createDocumentFragment();
+
+        for (let cellNum = 0; cellNum < this.cells.length; cellNum++) {
+            // Cloning deep to pick up the p element within the cell
+            cellClone = cell.cloneNode(true);
+            cell.id = `cell${cellNum}`
+
+            // Determine if the cell is in the last row by checking if a cell exists column spaces away 
+            // (immediately below it in a new row)
+            if (cellNum + this.columns > this.columns) {
+                cell.classList.add("cell-last-row");
             }
-            if (columnCounter !== this.columns - 1) {
-                cell.style.borderRight = "solid 1px white";
-            } 
+            // Determine if a cell is in the last column. The first cell in each row is evenly divisible
+            // by the number of columns
+            if (cellNum > 0 && cellNum % this.columns == 0) {
+                cell.classList.add("cell-last-column");
+            }
             
-            this.cells[rowCounter][columnNum] = cell;
+            this.cells[cellNum] = cell;
+            documentFragment.appendChild(cell);
         }
+
+        return documentFragment;
+    }
+
+    reset() {
+        for (let cellNum = 0; cellNum < this.cells.length; cellNum++) {
+            cell.classList.remove("player-one-win", "player-two-win");
+            cell.childNodes[0].textContent = "";
+
+            this.cells[cellNum] = cellClone;
+        }
+    }
+
+    resetBoard() {
+
+    }
+
+    resetBoardText() {
+
+    }
+}
+
+class ScoreBoard {
+    constructor() {
+        playerOneScore = 0;
+        drawScore = 0;
+        playerTwoScore = 0;
+        playerOneScoreText = document.querySelector("#player-one-score");
+        drawScoreText = document.querySelector("#draw-score");
+        playerTwoScoreText = document.querySelector('#player-two-score');
+    }
+
+    update() {
+        playerOneScoreText.textContent = `Player One: ${playerOneScore}`;
+        drawScoreText.textContent = `Draw: ${drawScore}`;
+        playerTwoScoreText.textContent = `Player Two: ${playerTwoScore}`;
     }
 }
 
 class Controller {
-
+    constructor() {
+        this.gameBoard = new GameBoard();
+        this.scoreBoard = new ScoreBoard()
+    }
 }
 
 function clearGameBoard() {
-    let cells = document.querySelectorAll(".cell");
-    cells.forEach(cell => {
-        cell.classList.remove("player-win");
-        cell.classList.remove("computer-win");
-        let cellTextElement = cell.querySelector("p");
-        cellTextElement.textContent = "";
-    });
     gameOver = false;
     gameBoardText.textContent = "";
     gameBoardText.style.background = "none";
