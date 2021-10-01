@@ -99,10 +99,24 @@ button {
     box-shadow: inset 0px 0px 3px 3px #549BCD;
 }
 
-.player-one-win {
+.player-one-win-cell {
     box-shadow: inset 0px 0px 3px 3px #549BCD;
 }
 
-.player-two-win {
+.player-two-win-cell {
     box-shadow: inset 0px 0px 3px 3px #CF6060;
+}
+
+.player-one-win-text {
+    color: #549BCD;
+}
+
+.draw-text {
+    background: linear-gradient(#CF6060, #549BCD);
+    background-clip: text;
+    color: transparent;
+}
+
+.player-two-win-text {
+    color: #CF6060;
 }

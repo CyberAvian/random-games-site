@@ -1,17 +1,27 @@
 let gameOver = false;
-let playerWins = 0;
-let computerWins = 0;
-let draws = 0;
-
 
 let newGame = document.querySelector("#new-game");
 newGame.addEventListener('click', clearGameBoard);
 
 class Player {
-    constructor(number, symbol, type) {
+    constructor(number) {
         this.number = number;
-        this.symbol = symbol;
-        this.type = type;
+        this.symbol = number == 1 ? 'X' : 'O';
+        this.type = '';
+    }
+
+    get type() {
+        return this._type;
+    }
+
+    set type(newType) {
+        let validTypes = ['human', 'robot'];
+        newType = newType.trim();
+        if (!validTypes.includes(newType)) {
+            return;
+        }
+
+        this._type = newType;
     }
 }
 
@@ -19,19 +29,25 @@ class GameBoard {
     constructor() {
         this.gameBoardRows = 3;
         this.gameBoardColumns = 3;
-        this.cells = new Array(this.gameBoardRows * this.columns);
+        this.cells = new Array();
         this.board = document.querySelector("#game-board");
         this.text = this.board.querySelector("#game-result");
     }
 
     // Create the board, which is only done the first time the game is launched
     create() {
-        createdCells = this.createCells();
+        createdCells = this.#createCells();
         this.board.append(createdCells);
     }
 
+    // Remove all X's and O's from cells, remove formatting, and clear the game result text
+    reset() {
+        this.#resetBoard();
+        this.#resetBoardText();
+    }
+
     // Create the cells used in the board, which is only done the first time the game is launched
-    createCells(row) {
+    #createCells() {
         // Creating the cell element once and cloning in a loop to limit DOM manipulations
         let cell = document.createElement("div");
         cell.classList = "cell";
@@ -67,21 +83,16 @@ class GameBoard {
         return documentFragment;
     }
 
-    reset() {
-        for (let cellNum = 0; cellNum < this.cells.length; cellNum++) {
-            cell.classList.remove("player-one-win", "player-two-win");
+    #resetBoard() {
+        this.cells.forEach(cell => {
+            cell.classList.remove("player-one-win-cell", "player-two-win-cell");
             cell.childNodes[0].textContent = "";
-
-            this.cells[cellNum] = cellClone;
-        }
+        });
     }
 
-    resetBoard() {
-
-    }
-
-    resetBoardText() {
-
+    #resetBoardText() {
+        this.text.textContent = "";
+        this.text.classList.remove("player-one-win-text", "draw-text", "player-two-win-text");
     }
 }
 
@@ -95,6 +106,8 @@ class ScoreBoard {
         playerTwoScoreText = document.querySelector('#player-two-score');
     }
 
+    // The ScoreBoard is persistent as it tracks who won each game.
+    // Therefore, the update method is used for both initial creation and to update the scores after every game is decided.
     update() {
         playerOneScoreText.textContent = `Player One: ${playerOneScore}`;
         drawScoreText.textContent = `Draw: ${drawScore}`;
@@ -105,53 +118,84 @@ class ScoreBoard {
 class Controller {
     constructor() {
         this.gameBoard = new GameBoard();
-        this.scoreBoard = new ScoreBoard()
+        this.scoreBoard = new ScoreBoard();
+        // [gameState 0: startGame, gameState 1: playerOneTurn, gameState2: playerTwoTurn, gameState3: endGame]
+        this.gameState = 0;
+        this.playerOne = new Player(1);
+        this.playerTwo = new Player(2);
     }
-}
 
-function clearGameBoard() {
-    gameOver = false;
-    gameBoardText.textContent = "";
-    gameBoardText.style.background = "none";
-    gameBoardText.style.backgroundClip = "none";
-}
-
-function playRound() {
-    if (gameOver) return;
-
-    let cellTextElement = this.querySelector("p");
-    if (cellTextElement.textContent !== "") return;
-    cellTextElement.textContent = "X";
-    cellTextElement.style.color = "#549BCD";
-    
-    if (checkWin()) {
-        gameBoardText.style.color = "#549BCD";
-        gameBoardText.textContent = "You win!";
-        playerWins++;
-        gameOver = true;
-    } else if (countBlankCells() === 0) {
-        gameBoardText.style.background = "linear-gradient(#CF6060, #549BCD)";
-        gameBoardText.style.backgroundClip = "text";
-        gameBoardText.style.color = "transparent";
-        gameBoardText.textContent = "Draw";
-        draws++;
-        gameOver = true;
-    } else {
-        let computerPlayed;
-        do {
-            computerPlayed = computerMove();
-        } while (!computerPlayed)
-        if (checkWin()) {
-            gameBoardText.style.color = "#CF6060";
-            gameBoardText.textContent = "You lose!";
-            computerWins++;
-            gameOver = true;
+    init() {
+        // The game runs indefinitely while the page is open
+        while (true) {
+            switch (gameState) {
+                case 0:
+                    this.startGame();
+                    break;
+                case 1:
+                    break;
+                case 2:
+                    break;
+                case 3:
+                    break;
+            }
         }
     }
 
-    playerWinCount.textContent = `Player: ${playerWins}`;
-    drawCount.textContent = `Draw: ${draws}`;
-    computerWinCount.textContent = `Computer: ${computerWins}`;
+    startGame() {
+        this.#setUpGameField();
+        this.#setUpPlayers();
+    }
+
+    #setUpGameField() {
+        // The gameBoard cells array is only empty on a fresh launch of the game. 
+        // After initial creation, the array's contents are modified but never erased.
+        this.gameBoard.cells.length == 0 ? this.gameBoard.create() : this.gameBoard.reset();
+        this.scoreBoard.update();
+    }
+
+    #setUpPlayers() {
+        this.playerOne.type = 'human';
+        this.playerTwo.type = 'robot';
+    }
+
+    playRound() {
+        if (gameState == 3) return;
+
+        let cellTextElement = this.querySelector("p");
+        if (cellTextElement.textContent !== "") return;
+        cellTextElement.textContent = "X";
+        cellTextElement.style.color = "#549BCD";
+        
+        if (checkWin()) {
+            gameBoardText.style.color = "#549BCD";
+            gameBoardText.textContent = "You win!";
+            playerWins++;
+            gameOver = true;
+        } else if (countBlankCells() === 0) {
+            gameBoardText.style.background = "linear-gradient(#CF6060, #549BCD)";
+            gameBoardText.style.backgroundClip = "text";
+            gameBoardText.style.color = "transparent";
+            gameBoardText.textContent = "Draw";
+            draws++;
+            gameOver = true;
+        } else {
+            let computerPlayed;
+            do {
+                computerPlayed = computerMove();
+            } while (!computerPlayed)
+            if (checkWin()) {
+                gameBoardText.style.color = "#CF6060";
+                gameBoardText.textContent = "You lose!";
+                computerWins++;
+                gameOver = true;
+            }
+        }
+    
+        playerWinCount.textContent = `Player: ${playerWins}`;
+        drawCount.textContent = `Draw: ${draws}`;
+        computerWinCount.textContent = `Computer: ${computerWins}`;
+    }
 }
 
 function computerMove() {
