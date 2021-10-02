@@ -71,16 +71,24 @@ button {
     color: white;
 }
 
-.cell {
+.row {
     height: 100px;
-    width: 100px;
+    width: 300px;
+
+    display: flex;
+    flex-direction: row;
+}
+
+.cell {
+    height: 100%;
+    width: 100%;
 
     display: flex;
     justify-content: center;
     align-items: center;
 
-    border-bottom: "solid 1px white";
-    border-right: "solid 1px white";
+    border-bottom: solid 1px white;
+    border-right: solid 1px white;
 }
 
 .cell-last-column {
