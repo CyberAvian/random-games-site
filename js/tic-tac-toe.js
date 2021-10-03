@@ -1,47 +1,31 @@
 class Player {
-    constructor(symbol) {
+    constructor(symbol, number) {
         this.symbol = symbol;
-        this.move = null;
-        this.state = 'inactive';
+        this.number = number;
     }
 
-    get move() {
-        return this._move;
-    }
-
-    set move(newMove) {
-        this._move = newMove;
-    }
-
-    getMove(clickEvent) {
-        this.state == 'active' ? this.move = clickEvent.target : this.move = null;
-    }
-
-    markCell() {
-        if (this.move == null) return false;
+    markCell(cell) {
+        let cellContent = cell.childNodes[0];
+        if (cellContent.textContent != '') return false;
         
-        let cellContent = this.move.childNodes[0].textContent;
-        if (cellContent != '') return false;
-        
-        cellContent = this.symbol;
-        this.move = null;
+        cellContent.textContent = this.symbol;
+        cell.classList.add(`player-${this.number}-color`);
         return true;
     }
 }
 
 class Robot extends Player{
-    constructor(symbol, difficulty) {
-        super(symbol);
+    constructor(symbol, number, difficulty) {
+        super(symbol, number);
         // [difficulty 0: easy, difficulty 1: medium, difficulty 2: hard]
         this.difficulty = difficulty;
-        this.move = null;
     }
 
     getMove() {
         let selectedMove;
         switch(this.difficulty) {
             case 0:
-                move = this.getRandomMove();
+                selectedMove = this.getRandomMove();
                 break;
             case 1:
                 break;
@@ -56,19 +40,6 @@ class Robot extends Player{
         let randomChoice = Math.floor(Math.random() * 8);
         return randomChoice;
     }
-
-    setMove(cell) {
-        this.move = cell;
-    }
-
-    markCell() {
-        let cellContent = this.move.childNodes[0].textContent;
-        if (cellContent != '') return false;
-        
-        cellContent = this.symbol;
-        this.move = null;
-        return true;
-    }
 }
 
 class GameBoard {
@@ -77,7 +48,7 @@ class GameBoard {
         this.gameBoardColumns = 3;
         this.cells = new Array();
         this.board = document.querySelector("#game-board");
-        this.text = this.board.querySelector("#game-result");
+        this.resultText = this.board.querySelector("#game-result");
         this.newGameButton = document.querySelector("#new-game");
     }
 
@@ -149,8 +120,8 @@ class GameBoard {
     }
 
     #resetBoardText() {
-        this.text.textContent = "";
-        this.text.classList.remove("player-one-win-text", "draw-text", "player-two-win-text");
+        this.resultText.textContent = "";
+        this.resultText.classList.remove("player-one-win-text", "draw-text", "player-two-win-text");
     }
 }
 
@@ -177,56 +148,70 @@ class Controller {
     constructor() {
         this.gameBoard = new GameBoard();
         this.scoreBoard = new ScoreBoard();
-        // [gameState 0: startGame, gameState 1: playerOneTurn, gameState2: playerTwoTurn, gameState3: endGame]
-        this.gameState = 0;
-        this.playerOne = new Player('X');
-        this.playerTwo = new Robot('O', 0);
+        this.playerOne = new Player('X', 'one');
+        this.playerTwo = new Robot('O', 'two', 0);
+        this.activePlayer = this.playerOne;
+        this.gameOver = false;
     }
 
     init() {
-        let endTurn;
-        switch (this.gameState) {
-            case 0:
-                this.startGame();
-                this.gameState++;
-                break;
-            case 1:
-                if (typeof this.playerOne == Player) this.playerOne.state = 'active';
-                endTurn = this.playerTurn(this.playerOne);
-                if (endTurn) {
-                    this.gameState++;
-                    if (typeof this.playerOne == Player) this.playerOne.state = 'inactive';
-                }
-                break;
-            case 2:
-                if (typeof this.playerOne == Player) this.playerTwo.state = 'active';
-                endTurn = this.playerTurn(this.playerTwo);
-                if (endTurn) {
-                    this.gameState++;
-                    if (typeof this.playerOne == Player) this.playerTwo.state = 'inactive';
-                }
-                break;
-            case 3:
-                break;
-        }
-    }
-
-    startGame() {
         this.#setUpGameField();
         this.#setUpPlayers();
-        if (typeof this.playerOne == Player) this.#setUpCells;
-        if (typeof this.playerTwo == Player) this.#setUpCells;
     }
 
-    playerTurn(player) {
+    playerTurn(clickEvent) {
+        if (this.gameOver) return;
         let endTurn = false;
-        if (typeof player == Robot) {
-            let cellId = player.getMove();
-            cell = this.gameBoard.cells[cellId];
-            this.player.setMove(cell);
+        let cell;
+
+        cell = clickEvent.target;
+        endTurn = this.activePlayer.markCell(cell);
+        if (endTurn) {
+            this.#switchPlayer();
+            let checkEndGame = this.#evaluateBoard();
+            if (checkEndGame) {
+                this.gameOver = true;
+                this.#endGame(checkEndGame);
+            } else if (this.activePlayer.type == "robot") {
+                this.#robotTurn();
+            }
         }
-        endTurn = player.markCell();
-        return endTurn;
+    }
+
+    #evaluateBoard() {
+        if (this.#isDraw()) return 1;
+        if (this.#isPlayerWin()) return 2;
+        return 0;
+    }
+
+    #endGame(gameResult) {
+        if (gameResult == 1) {
+            this.gameBoard.resultText.textContent = 'Draw!';
+            this.gameBoard.resultText.classList.add('draw-color');
+            this.scoreBoard.drawScore++;
+        }
+        this.scoreBoard.update();
+    }
+
+    #robotTurn() {
+        let endTurn = false;
+        while (!endTurn) {
+            let cellNumber = this.activePlayer.getMove();
+            let cell = this.gameBoard.cells[cellNumber];
+            endTurn = this.activePlayer.markCell(cell);
+        }
+        this.#switchPlayer();
+        if (typeof this.activePlayer == Robot) {
+            this.#robotTurn();
+        }
+    }
+
+    #switchPlayer() {
+        if (this.activePlayer == this.playerOne) {
+            this.activePlayer = this.playerTwo;
+        } else {
+            this.activePlayer = this.playerOne;
+        }
     }
 
     #setUpGameField() {
@@ -241,15 +226,27 @@ class Controller {
         this.playerTwo.type = 'robot';
     }
 
-    #setUpCells(player) {
-        this.gameBoard.cells.forEach(cell => {
-            cell.addEventListener('click', player.getMove())
-        });
+    #isDraw() {
+        for (let cellNum = 0; cellNum < this.gameBoard.cells.length; cellNum++) {
+            let cell = this.gameBoard.cells[cellNum];
+            if (cell.childNodes[0].textContent == '') return 0;
+        }
+        console.log('draw');
+        return 1;
+    }
+
+    #isPlayerWin() {
+        return 0;
     }
 }
 
 let gameMaster = new Controller();
-document.addEventListener('DOMContentLoaded', gameMaster.init());
+gameMaster.init();
+gameMaster.gameBoard.cells.forEach(cell => {
+    cell.addEventListener('click', function (e) {
+        gameMaster.playerTurn(e);
+    })
+})
 
 // function countBlankCells() {
 //     let numBlankCells = 0;

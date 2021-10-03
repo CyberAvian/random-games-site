@@ -115,16 +115,16 @@ button {
     box-shadow: inset 0px 0px 3px 3px #CF6060;
 }
 
-.player-one-win-text {
+.player-one-color {
     color: #549BCD;
 }
 
-.draw-text {
+.draw-color {
     background: linear-gradient(#CF6060, #549BCD);
     background-clip: text;
     color: transparent;
 }
 
-.player-two-win-text {
+.player-two-color {
     color: #CF6060;
 }
