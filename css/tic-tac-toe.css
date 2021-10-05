@@ -37,23 +37,22 @@ button {
     font-size: 2em;
 }
 
-#player-win-count {
+#player-one-score, #draw-score, #player-two-score {
     width: 150px;
     text-align: center;
+}
+
+#player-one-score {
     color: #549BCD;
 }
 
-#draw-count {
-    width: 150px;
-    text-align: center;
+#draw-score {
     background: linear-gradient(#CF6060, #549BCD);
     background-clip: text;
     color: transparent;
 }
 
-#computer-win-count {
-    width: 150px;
-    text-align: center;
+#player-two-score {
     color: #CF6060;
 }
 
@@ -87,6 +86,17 @@ button {
     display: flex;
     justify-content: center;
     align-items: center;
+
+    border-bottom: solid 1px white;
+    border-right: solid 1px white;
+}
+
+.cell-last-column {
+    border-right: none;
+}
+
+.cell-last-row {
+    border-bottom: none;
 }
 
 .cell p {
@@ -97,10 +107,24 @@ button {
     box-shadow: inset 0px 0px 3px 3px #549BCD;
 }
 
-.computer-win {
+.player-one-win-cell {
+    box-shadow: inset 0px 0px 3px 3px #549BCD;
+}
+
+.player-two-win-cell {
     box-shadow: inset 0px 0px 3px 3px #CF6060;
 }
 
-.player-win {
-    box-shadow: inset 0px 0px 3px 3px #549BCD;
+.player-one-color {
+    color: #549BCD;
+}
+
+.draw-color {
+    background: linear-gradient(#CF6060, #549BCD);
+    background-clip: text;
+    color: transparent;
+}
+
+.player-two-color {
+    color: #CF6060;
 }
