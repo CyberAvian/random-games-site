@@ -37,7 +37,9 @@ class Robot extends Player{
     }
 
     getRandomMove() {
-        let randomChoice = Math.floor(Math.random() * 8);
+        let randomRow = Math.floor(Math.random() * 3);
+        let randomColumn = Math.floor(Math.random() * 3);
+        let randomChoice = [randomRow, randomColumn]
         return randomChoice;
     }
 }
@@ -46,7 +48,7 @@ class GameBoard {
     constructor() {
         this.gameBoardRows = 3;
         this.gameBoardColumns = 3;
-        this.cells = new Array();
+        this.cells = new Array(3).fill('').map(() => new Array(3).fill(''));
         this.board = document.querySelector("#game-board");
         this.resultText = this.board.querySelector("#game-result");
         this.newGameButton = document.querySelector("#new-game");
@@ -67,17 +69,17 @@ class GameBoard {
 
     #createRows() {
         let rows = document.querySelectorAll(".row");
-        let counter = 0;
+        let rowCounter = 0;
         
         rows.forEach(row => {
-            let cellFragment = this.#createCells(counter);
+            let cellFragment = this.#createCells(rowCounter);
             row.appendChild(cellFragment);
-            counter += 3;
+            rowCounter++;
         });
     }
 
     // Create the cells used in the board, which is only done the first time the game is launched
-    #createCells(counter) {
+    #createCells(rowNumber) {
         // Creating the cell element once and cloning in a loop to limit DOM manipulations
         let cell = document.createElement("div");
         cell.classList = "cell";
@@ -89,23 +91,23 @@ class GameBoard {
         // allowing us to build the child element before appending it once
         let documentFragment = document.createDocumentFragment();
 
-        for (let cellNum = counter; cellNum < counter + 3; cellNum++) {
+        for (let columnNumber = 0; columnNumber < this.gameBoardColumns; columnNumber++) {
             // Cloning deep to pick up the p element within the cell
             let cellClone = cell.cloneNode(true);
-            cellClone.id = `cell${cellNum}`
+            cellClone.id = `cell${rowNumber}${columnNumber}`;
 
             // There are 9 cells, 3 per row. The last row contains cells 6-8.
-            if (cellNum > 5) {
+            if (rowNumber == this.gameBoardRows - 1) {
                 cellClone.classList.add("cell-last-row");
             }
             // Determine if a cell is in the last column. 
             // The first cell of each row is evenly divisible by the number of columns. 
             // Must add 1 since index starts at 0.
-            if ((cellNum + 1) % this.gameBoardColumns == 0) {
+            if (columnNumber == this.gameBoardColumns - 1) {
                 cellClone.classList.add("cell-last-column");
             }
             
-            this.cells[cellNum] = cellClone;
+            this.cells[rowNumber][columnNumber] = cellClone;
             documentFragment.appendChild(cellClone);
         }
 
@@ -113,15 +115,21 @@ class GameBoard {
     }
 
     #resetBoard() {
-        this.cells.forEach(cell => {
-            cell.classList.remove("player-one-win-cell", "player-two-win-cell");
-            cell.childNodes[0].textContent = "";
+        this.cells.forEach(row => {
+            row.forEach(cell => {
+                cell.classList.remove("player-one-win-cell", 
+                                      "player-two-win-cell", 
+                                      "player-one-color", 
+                                      "player-two-color",
+                                      "draw-color");
+                cell.childNodes[0].textContent = "";
+            });
         });
     }
 
     #resetBoardText() {
         this.resultText.textContent = "";
-        this.resultText.classList.remove("player-one-win-text", "draw-text", "player-two-win-text");
+        this.resultText.classList.remove("player-one-color", "draw-color", "player-two-color");
     }
 }
 
@@ -152,11 +160,13 @@ class Controller {
         this.playerTwo = new Robot('O', 'two', 0);
         this.activePlayer = this.playerOne;
         this.gameOver = false;
+        this.firstRun = true;
     }
 
     init() {
         this.#setUpGameField();
         this.#setUpPlayers();
+        this.firstRun = false;
     }
 
     playerTurn(clickEvent) {
@@ -167,25 +177,28 @@ class Controller {
         cell = clickEvent.target;
         endTurn = this.activePlayer.markCell(cell);
         if (endTurn) {
-            this.#switchPlayer();
-            let checkEndGame = this.#evaluateBoard();
-            if (checkEndGame) {
-                this.gameOver = true;
-                this.#endGame(checkEndGame);
-            } else if (this.activePlayer.type == "robot") {
+            let turnResult = this.#evaluateBoard(cell);
+            turnResult ? this.#endGame(turnResult) : this.#switchPlayer();
+            if (this.activePlayer.type == "robot") {
                 this.#robotTurn();
             }
         }
     }
 
-    #evaluateBoard() {
-        if (this.#isDraw()) return 1;
-        if (this.#isPlayerWin()) return 2;
-        return 0;
+    #evaluateBoard(cell) {
+        if (this.#isPlayerWin(cell)) return 1;
+        if (this.#isDraw()) return 2;
+        return false;
     }
 
     #endGame(gameResult) {
+        this.gameOver = true;
         if (gameResult == 1) {
+            let playerNumber = this.activePlayer.number;
+            this.gameBoard.resultText.textContent = `Player ${playerNumber} Wins!`.toUpperCase();
+            this.gameBoard.resultText.classList.add(`player-${playerNumber}-color`);
+            this.activePlayer == this.playerOne ? this.scoreBoard.playerOneScore++ : this.scoreBoard.playerTwoScore++;
+        } else if (gameResult == 2) {
             this.gameBoard.resultText.textContent = 'Draw!';
             this.gameBoard.resultText.classList.add('draw-color');
             this.scoreBoard.drawScore++;
@@ -195,12 +208,16 @@ class Controller {
 
     #robotTurn() {
         let endTurn = false;
+        let cell;
         while (!endTurn) {
-            let cellNumber = this.activePlayer.getMove();
-            let cell = this.gameBoard.cells[cellNumber];
+            let cellLocation = this.activePlayer.getMove();
+            let cellRow = cellLocation[0];
+            let cellColumn = cellLocation[1];
+            cell = this.gameBoard.cells[cellRow][cellColumn];
             endTurn = this.activePlayer.markCell(cell);
         }
-        this.#switchPlayer();
+        let turnResult = this.#evaluateBoard(cell);
+        turnResult ? this.#endGame(turnResult) : this.#switchPlayer();
         if (typeof this.activePlayer == Robot) {
             this.#robotTurn();
         }
@@ -215,9 +232,7 @@ class Controller {
     }
 
     #setUpGameField() {
-        // The gameBoard cells array is only empty on a fresh launch of the game. 
-        // After initial creation, the array's contents are modified but never erased.
-        this.gameBoard.cells.length == 0 ? this.gameBoard.create() : this.gameBoard.reset();
+        this.firstRun ? this.gameBoard.create() : this.gameBoard.reset();
         this.scoreBoard.update();
     }
 
@@ -227,137 +242,109 @@ class Controller {
     }
 
     #isDraw() {
-        for (let cellNum = 0; cellNum < this.gameBoard.cells.length; cellNum++) {
-            let cell = this.gameBoard.cells[cellNum];
-            if (cell.childNodes[0].textContent == '') return 0;
+        for (let rowNum = 0; rowNum < this.gameBoard.gameBoardRows; rowNum++) {
+            for (let columnNum = 0; columnNum < this.gameBoard.gameBoardColumns; columnNum++) {
+                let cell = this.gameBoard.cells[rowNum][columnNum];
+                if (cell.childNodes[0].textContent == '') return false;
+            }
         }
-        console.log('draw');
-        return 1;
+        return true;
     }
 
-    #isPlayerWin() {
-        return 0;
+    #isPlayerWin(cell) {
+        let cellRow = this.#getRow(cell);
+        let cellColumn =  this.#getColumn(cell, cellRow);
+        
+        if (this.#checkRow(cellRow)) return true;
+        if (this.#checkColumn(cellColumn)) return true;
+        if (this.#checkDiagonal(cellRow, cellColumn)) return true;
+        return false;
+    }
+
+    #getRow(cell) {
+        for (let rowNum = 0; rowNum < this.gameBoard.gameBoardRows; rowNum++) {
+            if (this.gameBoard.cells[rowNum].includes(cell)) {
+                return rowNum;
+            }
+        }
+    }
+
+    #getColumn(cell, row) {
+        let column = this.gameBoard.cells[row].indexOf(cell);
+        return column;
+    }
+
+    #checkRow(rowNum) {
+        let row = this.gameBoard.cells[rowNum];
+        for (let cellNum = 0; cellNum < row.length; cellNum++) {
+            let cellText = row[cellNum].childNodes[0].textContent;
+            if (cellText != this.activePlayer.symbol) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    #checkColumn(column) {
+        for (let rowNum = 0; rowNum < this.gameBoard.gameBoardRows; rowNum++) {
+            let row = this.gameBoard.cells[rowNum];
+            let cellText = row[column].childNodes[0].textContent;
+            console.log(`Cell Text: ${cellText} Symbol: ${this.activePlayer.symbol}`);
+            if (cellText != this.activePlayer.symbol) {
+                console.log('Mismatch');
+                return false;
+            }
+        }
+        return true;
+    }
+
+    #checkDiagonal(row, column) {
+        // We can use the difference of row and column numbers to figure out if a cell lies on a diagonal
+        // The cells not on a diagonal are (0, 1) (1, 0) (1, 2) (2, 1) which each have a difference of 1. 
+        // The cells on the top-left to bottom-right diagonal are (0, 0) (1, 1) (2, 2) which have a difference of 0
+        // The cells on the bottom-left to top-right diagonal are (0, 2) (1, 1) (2, 0) which have a difference of 2 or 0
+        let difference = Math.abs(row - column);
+        switch (difference) {
+            case 1:
+                break;
+            case 0:
+                if (this.#checkDiagonalCells(0, 'right')) return true;
+                if (row != 1 || column != 1 ) break;
+            case 2:
+                let columns = this.gameBoard.gameBoardColumns - 1;
+                if (this.#checkDiagonalCells(columns, 'left')) return true;
+                break;
+        }
+        return false;
+    }
+
+    #checkDiagonalCells(columnNum, direction) {
+        // direction specifies which diagonal to use.
+        // For the diagonal going left to right, we use direction right and go from (0, 0) to (2, 2)
+        // For the diagonal going right to left, we use direction left adn go from (0, 2) to (2, 0)
+        for (let rowNum = 0; rowNum < this.gameBoard.gameBoardRows; rowNum++) {
+            let row = this.gameBoard.cells[rowNum];
+            let cellText = row[columnNum].childNodes[0].textContent;
+            if (cellText != this.activePlayer.symbol) {
+                return false;
+            }
+            direction == 'right' ? columnNum++ : columnNum--;
+        }
+        return true;
     }
 }
 
 let gameMaster = new Controller();
 gameMaster.init();
-gameMaster.gameBoard.cells.forEach(cell => {
-    cell.addEventListener('click', function (e) {
-        gameMaster.playerTurn(e);
-    })
+gameMaster.gameBoard.cells.forEach(row => {
+    row.forEach(cell => {
+        cell.addEventListener('click', function (e) {
+            gameMaster.playerTurn(e);
+        });
+    });
+});
+gameMaster.gameBoard.newGameButton.addEventListener('click', () => {
+    gameMaster.activePlayer = gameMaster.playerOne;
+    gameMaster.gameOver = false;
+    gameMaster.gameBoard.reset();
 })
-
-// function countBlankCells() {
-//     let numBlankCells = 0;
-
-//     for (let row = 0; row < 3; row++) {
-//         for (let col = 0; col < 3; col++) {
-//             if (cells[row][col].textContent === "") {
-//                 numBlankCells++;
-//             }
-//         }
-//     }
-
-//     return numBlankCells;
-// }
-
-// function checkWin() {
-//     let xCount;
-//     let oCount;
-
-//     // Check Rows
-//     for (let row = 0; row < 3; row++) {
-//         xCount = 0;
-//         oCount = 0;
-
-//         for (let col = 0; col < 3; col++) {
-//             switch (cells[row][col].textContent) {
-//                 case "":
-//                     break;
-//                 case "X":
-//                     xCount++;
-//                     break;
-//                 case "O":
-//                     oCount++;
-//                     break;
-//             }
-//         }
-
-//         if (xCount === 3) {
-//             cells[row].forEach(col => {
-//                 col.classList.add("player-win");
-//             });
-//             return true;
-//         } else if (oCount === 3) {
-//             cells[row].forEach(col => {
-//                 col.classList.add("computer-win");
-//             });
-//             return true;
-//         }
-//     }
-
-//     // Check Columns
-//     for (let col = 0; col < 3; col++) {
-//         xCount = 0;
-//         oCount = 0;
-
-//         for (let row = 0; row < 3; row++) {
-//             switch (cells[row][col].textContent) {
-//                 case "":
-//                     break;
-//                 case "X":
-//                     xCount++;
-//                     break;
-//                 case "O":
-//                     oCount++;
-//                     break;
-//             }
-//         }
-
-//         if (xCount === 3) {
-//             for (let row = 0; row < 3; row++) {
-//                 cells[row][col].classList.add("player-win");
-//             }
-//             return true;
-//         } else if (oCount === 3) {
-//             for (let row = 0; row < 3; row++) {
-//                 cells[row][col].classList.add("computer-win");
-//             }
-//             return true;
-//         }
-//     }
-
-//     // Check Diagonal
-//     if (cells[0][0].textContent !== "" && cells[1][1].textContent !== "" && cells[2][2].textContent !== "") {
-//         if (cells[0][0].textContent === cells[1][1].textContent && cells[0][0].textContent === cells[2][2].textContent) {
-//             if (cells[0][0].textContent === 'X') {
-//                 cells[0][0].classList.add("player-win");
-//                 cells[1][1].classList.add("player-win");
-//                 cells[2][2].classList.add("player-win");
-//             } else if (cells[0][0].textContent === 'O') {
-//                 cells[0][0].classList.add("computer-win");
-//                 cells[1][1].classList.add("computer-win");
-//                 cells[2][2].classList.add("computer-win");
-//             }
-//             return true;
-//         }
-//     } else if (cells[0][2].textContent !== "" && cells[2][0].textContent !== "") {
-//         if (cells[0][2].textContent === cells[1][1].textContent && cells[0][2].textContent === cells[2][0].textContent) {
-//             if (cells[0][2].textContent === 'X') {
-//                 cells[0][2].classList.add("player-win");
-//                 cells[1][1].classList.add("player-win");
-//                 cells[2][0].classList.add("player-win");
-//             } else if (cells[0][2].textContent === 'O') {
-//                 cells[0][2].classList.add("computer-win");
-//                 cells[1][1].classList.add("computer-win");
-//                 cells[2][0].classList.add("computer-win");
-//             }
- 
-//             return true;
-//         }
-//     }
-
-//     // No` winning moves on board
-//     return false;
-// }
